@@ -13,10 +13,23 @@ import csv
 
 
 ##X,y
-data = pd.read_csv("INFOP7374_FeatureMart4GS.csv")
+df = pd.read_csv("INFOP7374_FeatureMart4GS.csv")
+data = df.values
+y = data[:, 6]
+X = data[:, 8:29]
+
+#train,test
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2)
+
+##Nomalize the Volumn attribute in the model
+
 
 ##Model
 #model = ElasticNet(alpha=0.4, l1_ratio=0.4)
-#model.fit(X,y)
+#model.fit(X_train,y_train)
+
+
+#y_hat = model.predict(X_test)
 
 ##RMSE
