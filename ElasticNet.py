@@ -10,6 +10,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import csv
+import math
 
 
 ##X,y
@@ -30,6 +31,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 #model.fit(X_train,y_train)
 
 
-#y_hat = model.predict(X_test)
-
+#y_hat = model.predict(X_test)s
 ##RMSE
+#MSE = mean_squared_error(y_test, y_hat)
+#RMSE = math.sqrt(MSE)
+print('Elastic Net')
+print('------------------------\n')
+print('Root mean square error is       \n',rmse)
