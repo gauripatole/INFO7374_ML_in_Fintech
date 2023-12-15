@@ -14,26 +14,36 @@ import csv
 import math
 
 
-##X,y, use the features
-df = pd.read_csv("INFOP7374_FeatureMart4GS.csv")
-data = df.values
-y = data[:, 6]
-X = data[:, 8:29]
+
+# define dataset
+start_date = datetime(2020,1,1)
+end_date = datetime(2023,12,31)
+DATA_raw = pd.read_csv('INFOP7374_FeatureMart4GS.csv', index_col = [0])
+DATA_raw.describe()
+# copy the data
+DATA = DATA_raw.copy() 
+DATA['Date'] = pd.to_datetime(DATA['Date'])
+# X and Y have to use the same index and index must be of the same data type
+
+##STOCK_raw = yf.download('LULU', start_date, end_date)
+##STOCK_raw.describe()
+##STOCK = STOCK_raw.copy()
+X = DATA.set_index('Date').fillna(method='bfill')
+# y = STOCK['Adj Close']
+y = np.diff(np.log(DATA['Adj Close'].values))
+y = np.append(y[0], y)
+X = sm.add_constant(X)
 
 ##Nomalize the Volumn attribute in the model
-for column in data.columns[1:]:
-    STOCK[column] = (STOCK_raw[column] -
-                           STOCK_raw[column].mean()) / STOCK_raw[column].std()  
+for column in DATA_raw.columns[1:]:
+    DATA[column] = (DATA_raw[column] -
+                           DATA_raw[column].mean()) / DATA_raw[column].std()  
 
 #check null values
 
 #train,test
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2)
-
-
-
-
 
 
 ##Feature Selection using Elastic Net
@@ -43,14 +53,14 @@ a=1
 
 ##Tune the parameters for the model
 #model = ElasticNet(alpha=a, l1_ratio=0.4)
-model_prep = linear_model.ElasticNet(alpha=a, fit_intercept=False).fit(X_train, y_train)
-model_select = X.columns[np.abs(model_prep.coef_)!=0.0]
-x = X[model_select]
-model = sm.OLS(y_train,x).fit()
+model_prep = ElasticNet(alpha=a, fit_intercept=False).fit(X_train, y_train)
+model_select = X_train.columns[np.abs(model_prep.coef_)!=0.0]
+x_train = X_train[model_select]
+model = sm.OLS(y_train,x_train).fit()
 print(model.summary())
-y_hat = model.predict(x)
-corr_model4 = ss.pearsonr(y_pred_model4, y)[0]
-print('model 4 Elastic Net: corr (Y, Y_pred) = '+str(corr_model3))
+y_pred = model.predict(x_train)
+corr_model = ss.pearsonr(y_pred, y_test)[0]
+print('model Elastic Net: corr (Y, Y_pred) = '+str(corr_model))
 print('ElasticNet selected ' +str(len(model_select)) +' features: ', model_select.values)
 
 #model.fit(X_train,y_train)
