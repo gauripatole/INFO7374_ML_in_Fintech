@@ -28,7 +28,7 @@ DATA['Date'] = pd.to_datetime(DATA['Date'])
 
 
 
-##Nomalize the Volumn attribute in the model
+##Nomalize the Volume attribute in the model
 #for column in DATA_raw.columns[1:7]:
  #   DATA[column] = (DATA_raw[column] -
   #                         DATA_raw[column].mean()) / DATA_raw[column].std()  
@@ -83,20 +83,33 @@ print(model.summary())
 ##
 ##
 y_hat = model.predict(X_test[model_select])
+y_hat2 = y_hat*y_hat.std()+y_hat.mean()
+y_test2 = y_test*DATA_raw['Adj Close'].std()+DATA_raw['Adj Close'].mean()
 ####RMSE
 MSE = mean_squared_error(y_test, y_hat)
 RMSE = math.sqrt(MSE)
+##MSE2 = mean_squared_error(y_test2, y_hat2)
+##RMSE2 = math.sqrt(MSE2)
 print('Elastic Net')
 print('------------------------\n')
-print('Root mean square error is       \n',RMSE)
+print('Root mean square error of Normalized data is       \n',RMSE)
+##print('------------------------\n')
+##print('Root mean square error of Data is       \n',RMSE2)
+
 ##
 # visualize feature importance (run each line sequentially)
 coeff = model.params
 plt.figure(figsize=(10,6))
-plt.barh(list(x_train.columns), coeff)
+##fig, axes = plt.subplots(4, 1, figsize=(16, 8))
+##plt.barh(list(x_train.columns), coeff)
 plt.xlabel("Feature Importance (Coefficient)")
 plt.ylabel("Features")
+sns.boxplot(y=coeff.index, x=coeff.values)
+##sns.stripplot(x=coeff.index, y=coeff.values)
+##sns.swarmplot(y=coeff.index, x=coeff.values)
 plt.title("Feature Importance in Linear Regression based on Elastic Net for LULU")
+
+
 
 ### (1) bar chart
 ##df_feature_importance.plot(kind='bar');
