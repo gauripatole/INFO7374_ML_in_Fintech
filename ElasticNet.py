@@ -37,8 +37,14 @@ DATA['Date'] = pd.to_datetime(DATA['Date'])
 #STOCK_raw = yf.download('LULU', start_date, end_date)
 #STOCK_raw.describe()
 ##STOCK = STOCK_raw.copy()
+
+indicatorCol = ['USRECDP', 'USRECDM', 'USRECD']
 for column in DATA_raw.columns[1:]:
-     DATA[column] = (DATA_raw[column] - DATA_raw[column].mean()) / DATA_raw[column].std()  
+    if column not in indicatorCol:
+        DATA[column] = (DATA_raw[column] - DATA_raw[column].mean()) / DATA_raw[column].std()
+    else:
+        continue
+        #DATA[column] = DATA_raw[column].astype(int)
 df1 = DATA.iloc[:,6:22]
 df2 = DATA.iloc[:,25:30]
 df_concat = pd.concat([df1,df2], axis=1)
@@ -54,17 +60,17 @@ X = sm.add_constant(X)
 
 #train,test
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2)
+    X, y, test_size=0.2, random_state = 40)
 ##
 ##
 ####Feature Selection using Elastic Net
-a=0.5
+a=0.01
 ##
 ##
 ##
 ####Tune the parameters for the model
 ###model = ElasticNet(alpha=a, l1_ratio=0.4)
-model_prep = ElasticNet(alpha=a, fit_intercept=False).fit(X_train, y_train)
+model_prep = ElasticNet(alpha=a, fit_intercept=False, l1_ratio=0.5).fit(X_train, y_train)
 model_select = X_train.columns[np.abs(model_prep.coef_)!=0.0]
 x_train = X_train[model_select]
 model = sm.OLS(y_train,x_train).fit()
@@ -76,41 +82,35 @@ print(model.summary())
 ##
 ##
 ##
-###y_hat = model.predict(X_test)s
+y_hat = model.predict(X_test[model_select])
 ####RMSE
-###MSE = mean_squared_error(y_test, y_hat)
-###RMSE = math.sqrt(MSE)
-###print('Elastic Net')
-###print('------------------------\n')
-###print('Root mean square error is       \n',rmse)
+MSE = mean_squared_error(y_test, y_hat)
+RMSE = math.sqrt(MSE)
+print('Elastic Net')
+print('------------------------\n')
+print('Root mean square error is       \n',RMSE)
 ##
-### 1. average feature importance
-df_feature_importance = pd.DataFrame(model.feature_importances_, index=X.columns, \
-                                     columns=['feature importance']).sort_values('feature importance', ascending=False)
-print(df_feature_importance)
+# visualize feature importance (run each line sequentially)
+coeff = model.params
+plt.figure(figsize=(10,6))
+plt.barh(list(x_train.columns), coeff)
+plt.xlabel("Feature Importance (Coefficient)")
+plt.ylabel("Features")
+plt.title("Feature Importance in Linear Regression based on Elastic Net for LULU")
 
-# 2. all feature importance for each tree
-df_feature_all = pd.DataFrame([tree.feature_importances_ for tree in model.estimators_], columns=X.columns)
-df_feature_all.head()
-# Melted data i.e., long format
-df_feature_long = pd.melt(df_feature_all,var_name='feature name', value_name='values')
-print(df_feature_long.iloc[0:102])
-
-
-# 3. visualize feature importance (run each line sequentially)
-# (1) bar chart
-df_feature_importance.plot(kind='bar');
-# (2) box plot
-sns.boxplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
-# (3) strip plot
-sns.stripplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
-# (4) swarm plot
-sns.swarmplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
-# (5) all above in one plot
-fig, axes = plt.subplots(4, 1, figsize=(16, 8))
-df_feature_importance.plot(kind='bar', ax=axes[0], title='Plots Comparison for Feature Importance');
-sns.boxplot(ax=axes[1], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
-sns.stripplot(ax=axes[2], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
-sns.swarmplot(ax=axes[3], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+### (1) bar chart
+##df_feature_importance.plot(kind='bar');
+### (2) box plot
+##sns.boxplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+### (3) strip plot
+##sns.stripplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+### (4) swarm plot
+##sns.swarmplot(x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+### (5) all above in one plot
+##fig, axes = plt.subplots(4, 1, figsize=(16, 8))
+##df_feature_importance.plot(kind='bar', ax=axes[0], title='Plots Comparison for Feature Importance');
+##sns.boxplot(ax=axes[1], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+##sns.stripplot(ax=axes[2], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
+##sns.swarmplot(ax=axes[3], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
 plt.tight_layout()
 
