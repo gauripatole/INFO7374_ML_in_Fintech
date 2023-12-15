@@ -34,14 +34,18 @@ DATA['Date'] = pd.to_datetime(DATA['Date'])
   #                         DATA_raw[column].mean()) / DATA_raw[column].std()  
 
 #check null values
-##STOCK_raw = yf.download('LULU', start_date, end_date)
-##STOCK_raw.describe()
+#STOCK_raw = yf.download('LULU', start_date, end_date)
+#STOCK_raw.describe()
 ##STOCK = STOCK_raw.copy()
-df1 = DATA.iloc[:,0:22]
-df2 = DATA.iloc[:,25:]
+for column in DATA_raw.columns[1:]:
+     DATA[column] = (DATA_raw[column] - DATA_raw[column].mean()) / DATA_raw[column].std()  
+df1 = DATA.iloc[:,6:22]
+df2 = DATA.iloc[:,25:30]
 df_concat = pd.concat([df1,df2], axis=1)
-X = df_concat.set_index('Date').fillna(method='bfill')
-y = DATA['Adj Close']
+#X = df_concat.set_index('Date').fillna(method='bfill')
+X = df_concat.fillna(method='bfill')
+#exclude_columns = ['Adj Close', 'Yest_Close', 'stock_return']
+y = np.array(DATA['Adj Close']).reshape(-1,1)
 #y = np.diff(np.log(DATA['Adj Close'].values))
 #y = np.append(y[0], y)
 X = sm.add_constant(X)
@@ -51,37 +55,36 @@ X = sm.add_constant(X)
 #train,test
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2)
-
-
-##Feature Selection using Elastic Net
+##
+##
+####Feature Selection using Elastic Net
 a=0.5
-
-
-
-##Tune the parameters for the model
-#model = ElasticNet(alpha=a, l1_ratio=0.4)
+##
+##
+##
+####Tune the parameters for the model
+###model = ElasticNet(alpha=a, l1_ratio=0.4)
 model_prep = ElasticNet(alpha=a, fit_intercept=False).fit(X_train, y_train)
 model_select = X_train.columns[np.abs(model_prep.coef_)!=0.0]
 x_train = X_train[model_select]
 model = sm.OLS(y_train,x_train).fit()
 print(model.summary())
-y_pred = model.predict(x_train)
-corr_model = ss.pearsonr(y_pred, y_train)[0]
-print('model Elastic Net: corr (Y, Y_pred) = '+str(corr_model))
-print('ElasticNet selected ' +str(len(model_select)) +' features: ', model_select.values)
-
-#model.fit(X_train,y_train)
-
-
-#y_hat = model.predict(X_test)s
-##RMSE
-#MSE = mean_squared_error(y_test, y_hat)
-#RMSE = math.sqrt(MSE)
-#print('Elastic Net')
-#print('------------------------\n')
-#print('Root mean square error is       \n',rmse)
-
-# 1. average feature importance
+##y_pred = model.predict(x_train)
+##corr_model = ss.pearsonr(y_pred, y_train)[0]
+##print('model Elastic Net: corr (Y, Y_pred) = '+str(corr_model))
+##print('ElasticNet selected ' +str(len(model_select)) +' features: ', model_select.values)
+##
+##
+##
+###y_hat = model.predict(X_test)s
+####RMSE
+###MSE = mean_squared_error(y_test, y_hat)
+###RMSE = math.sqrt(MSE)
+###print('Elastic Net')
+###print('------------------------\n')
+###print('Root mean square error is       \n',rmse)
+##
+### 1. average feature importance
 df_feature_importance = pd.DataFrame(model.feature_importances_, index=X.columns, \
                                      columns=['feature importance']).sort_values('feature importance', ascending=False)
 print(df_feature_importance)
@@ -110,3 +113,4 @@ sns.boxplot(ax=axes[1], x="feature name", y="values", data=df_feature_long, orde
 sns.stripplot(ax=axes[2], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
 sns.swarmplot(ax=axes[3], x="feature name", y="values", data=df_feature_long, order=df_feature_importance.index);
 plt.tight_layout()
+
